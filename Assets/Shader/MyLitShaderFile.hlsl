@@ -181,10 +181,35 @@ float4 Fragment(Interpolators input): SV_TARGET{
     float3 iblSpecularResult = iblSpecular * (Flast * envBRDF.r + envBRDF.g);
     float3 IndirectResult = iblDiffuseResult + iblSpecularResult;
     
-    
-
-    
     float3 finalColor = (diffuse + specular)  * mainLight.color * mainLight.shadowAttenuation * NdotL;
 
+    //additional light
+    #ifdef _ADDITIONAL_LIGHTS
+    uint additionalLightsCount = GetAdditionalLightsCount();
+    for (uint lightIndex = 0u; lightIndex < additionalLightsCount; ++lightIndex)
+    {
+        Light light = GetAdditionalLight(lightIndex, positionWS ,shadowCoord);
+        lightDir = light.direction;
+        halfDir = normalize(lightDir + viewDir);
+            
+        NdotL = max(dot(normalWS, lightDir), 0.0);
+        NdotH = max(dot(normalWS, halfDir), 0.0);
+            
+        // Recalculate D, G, F for this light
+        D = D_GGX_TR(NdotH, roughness);
+        G = GeometrySmith(normalWS, viewDir, lightDir, roughness);
+        F = SchlickFresnel(NdotL, F0, roughness);
+            
+        denominator = 4.0 * max(dot(normalWS, viewDir), 0.0) * NdotL + 0.001;
+            
+        KD = (float3(1,1,1) - F)*(float3(1,1,1) - Metallic);
+        diffuse = KD * albedo * lerp(1, AO, _AOScale) / PI;
+        specular = D*F*G/denominator;
+            
+        // Add this light's contribution
+        finalColor += (diffuse + specular) * light.color * light.shadowAttenuation * light.distanceAttenuation * NdotL;
+    }
+    #endif
+    
     return float4 (finalColor+IndirectResult, 1);
 }
