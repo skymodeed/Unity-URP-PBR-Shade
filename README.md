@@ -25,14 +25,15 @@ Assets/
 3. Open SampleScene.unity to see the shader in action
 
 ## Shader Usage
+Only work with forward pipeline(not forward+)
 Apply the "MyLit" shader to your materials:
 1. Create a new material
 2. Select "MyLit" from the shader dropdown
 3. Adjust metallic/smoothness parameters as needed
 
 ## Requirements
-- Unity 2021.3 or later
-- Universal Render Pipeline (URP)
+- Unity 6
+- Universal Render Pipeline 17.0.3(URP)
 
 ## License
 MIT
