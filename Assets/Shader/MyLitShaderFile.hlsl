@@ -124,6 +124,7 @@ float GeometrySmith(float3 N, float3 V, float3 L, float roughness)
 float4 Fragment(Interpolators input): SV_TARGET{
     UNITY_SETUP_INSTANCE_ID(input);
     UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
+    float2 normalizedScreenSpaceUV = GetNormalizedScreenSpaceUV(input.positionCS);
     
     float2 uv = input.uv;
     float3 positionWS = float3(input.TtoW0.w,input.TtoW1.w,input.TtoW2.w);
@@ -179,9 +180,9 @@ float4 Fragment(Interpolators input): SV_TARGET{
     
     float3 iblDiffuseResult = iblDiffuse * kdLast * albedo;
     float3 iblSpecularResult = iblSpecular * (Flast * envBRDF.r + envBRDF.g);
-    float3 IndirectResult = iblDiffuseResult + iblSpecularResult;
+    float3 IndirectLight = iblDiffuseResult + iblSpecularResult;
     
-    float3 finalColor = (diffuse + specular)  * mainLight.color * mainLight.shadowAttenuation * NdotL;
+    float3 DirectLight = (diffuse + specular)  * mainLight.color * mainLight.shadowAttenuation * NdotL;
 
     //additional light
     #ifdef _ADDITIONAL_LIGHTS
@@ -207,9 +208,16 @@ float4 Fragment(Interpolators input): SV_TARGET{
         specular = D*F*G/denominator;
             
         // Add this light's contribution
-        finalColor += (diffuse + specular) * light.color * light.shadowAttenuation * light.distanceAttenuation * NdotL;
+        DirectLight += (diffuse + specular) * light.color * light.shadowAttenuation * light.distanceAttenuation * NdotL;
     }
     #endif
+
+    #if defined(_SCREEN_SPACE_OCCLUSION)
+    AmbientOcclusionFactor aoFactor = GetScreenSpaceAmbientOcclusion(normalizedScreenSpaceUV);
+    DirectLight *= aoFactor.indirectAmbientOcclusion;
+    IndirectLight *= aoFactor.directAmbientOcclusion;
+    #endif
     
-    return float4 (finalColor+IndirectResult, 1);
+    
+    return float4 (DirectLight+IndirectLight, 1);
 }

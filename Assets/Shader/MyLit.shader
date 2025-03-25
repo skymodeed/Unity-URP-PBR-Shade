@@ -9,7 +9,7 @@ Shader "LearnShader/MyLit"{
         [RoughnessTexture]_RoughnessMap("Roughness Map", 2D) = "white" {}
         [RoughnessScale]_RoughnessScale ("Roughness Scale", Range(0,1)) = 1.0
         
-        [MetallicTexture]_MetallicMap("Metallic Map", 2D) = "black" {}
+        [MetallicTexture]_MetallicMap("Metallic Map", 2D) = "white" {}
         [MetallicScale]_MetallicScale ("Metallic Scale", Range(0,1)) = 1.0
         
         [AOTexture]_AOMap("AO Map", 2D) = "white" {}
@@ -37,6 +37,7 @@ Shader "LearnShader/MyLit"{
             #pragma multi_compile _ _ADDITIONAL_LIGHTS_VERTEX _ADDITIONAL_LIGHTS
             #pragma multi_compile _ _ADDITIONAL_LIGHT_SHADOWS
             #pragma multi_compile _ _SHADOWS_SOFT
+            #pragma multi_compile _ _SCREEN_SPACE_OCCLUSION
 
             #include "MyLitShaderFile.hlsl"
             ENDHLSL
@@ -53,5 +54,32 @@ Shader "LearnShader/MyLit"{
             #include "MyLitShaderShadow.hlsl"
             ENDHLSL
         }
+        Pass
+        {
+            Name "DepthNormals"
+            Tags{"LightMode" = "DepthNormals"}
+
+            ZWrite On
+            Cull Back
+
+            HLSLPROGRAM
+            #pragma vertex DepthNormalsVertex
+            #pragma fragment DepthNormalsFragment
+
+            // 材质关键字
+            #pragma shader_feature_local _ALPHATEST_ON
+            #pragma shader_feature_local_fragment _SMOOTHNESS_TEXTURE_ALBEDO_CHANNEL_A
+
+            // GPU实例化
+            #pragma multi_compile_instancing
+
+            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/CommonMaterial.hlsl"
+            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/SurfaceInput.hlsl"
+            #include "Packages/com.unity.render-pipelines.universal/Shaders/DepthNormalsPass.hlsl"
+            
+            ENDHLSL
+        }
+
     }
 }

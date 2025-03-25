@@ -51,7 +51,7 @@ Material:
     m_Floats:
     - _AOScale: 1
     - _GlossScale: 1
-    - _MetallicScale: 1
+    - _MetallicScale: 0
     - _NormalScale: 1
     - _RoughnessScale: 1
     m_Colors:
